@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+name="jupyter"
+description="Jupyter Server"
+directory="/opt/jupyter/wsl-jupyter"
+
+command="/usr/bin/uv"
+command_args="run jupyter lab"
+command_user="jupyter:jupyter"
+
+pidfile="/run/${RC_SVCNAME}.pid"
+
+command_background="yes"
+
+depend() {
+    need net
+}
+
+
