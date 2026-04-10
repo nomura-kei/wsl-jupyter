@@ -24,13 +24,13 @@ EOF
 }
 
 # ----------------------------------------------------------------------
-#  install python (uv, openrc install)
+#  install python (uv, openrc, sudo, bash, git, curl, shadow install)
 # ----------------------------------------------------------------------
 install_python() {
     # install uv
     which uv
     if [ $? -ne 0 ]; then
-        apk update && apk add --no-cache uv openrc
+        apk update && apk add --no-cache uv openrc sudo bash git curl shadow
     fi
 
     # install python
@@ -91,11 +91,45 @@ sed -i \
     ~/.jupyter/jupyter_lab_config.py
 mkdir -p /opt/jupyter/wsl-jupyter/notebook
 EOF
+    /bin/cp -rf "${WIN_BASE_PATH}/notebook/"* /opt/jupyter/wsl-jupyter/notebook/
+    /bin/chown -R jupyter:jupyter /opt/jupyter/wsl-jupyter/notebook
     /bin/cp -f "${WIN_BASE_PATH}/conf/jupyter" /etc/init.d/
     /bin/chmod +x /etc/init.d/jupyter
     /sbin/rc-update add jupyter default
     return 0
 }
+
+# ----------------------------------------------------------------------
+#  configure the others
+# ----------------------------------------------------------------------
+configure_others() {
+    # sudo settings
+    if [ ! -f /etc/sudoers.d/wheel ]; then
+        echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
+        gpasswd -a jupyter wheel
+    fi
+
+    # System32 Path Settings
+    su - jupyter << 'EOF'
+    grep '#@ System32 path settings' ~/.profile
+    if [ $? -ne 0 ]; then
+        echo '#@ System32 path settings' >> ~/.profile
+        WSL_COMMAND=$(ls /mnt/*/WINDOWS/System32/wsl.exe)
+        if [ "${WSL_COMMAND}" != "" ]; then
+            SYSTEM32_PATH=$(dirname ${WSL_COMMAND})
+            echo 'export PATH=${PATH}:'"${SYSTEM32_PATH}" >> ~/.profile
+        fi
+    fi
+EOF
+}
+
+# ----------------------------------------------------------------------
+#  create jupyter config
+# ----------------------------------------------------------------------
+create_jupyter_config() {
+    grep export /opt/jupyter/.profile > /etc/conf.d/jupyter
+}
+
 
 # プロキシ設定
 [ -f "${WIN_BASE_PATH}/conf/proxy.txt" ] && . "${WIN_BASE_PATH}/conf/proxy.txt"
@@ -106,6 +140,8 @@ install_python
 install_jupyter
 configure_network
 configure_jupyter
+configure_others
+create_jupyter_config
 if [ $? -eq 0 ]; then
     openrc default
 fi
