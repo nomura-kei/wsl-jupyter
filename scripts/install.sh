@@ -14,13 +14,14 @@ save_wsl_ipaddress() {
 # ----------------------------------------------------------------------
 add_jupyter_user() {
     [ ! -d /opt/jupyter ] && adduser -D -h /opt/jupyter jupyter
-    su - jupyter << 'EOF'
-    grep '#@ uv settings' ~/.profile
+    PROFILE=/opt/jupyter/.profile
+    grep '#@ uv settings' ${PROFILE}
     if [ $? -ne 0 ]; then
-        echo '#@ uv settings' >> ~/.profile
-        echo 'export PATH=${PATH}:~/.local/bin' >> ~/.profile
+        echo '#@ uv settings' >> ${PROFILE}
+        echo 'export PATH=${PATH}:~/.local/bin' >> ${PROFILE}
+        echo "export http_proxy=${http_proxy}" >> ${PROFILE}
+        echo "export https_proxy=${https_proxy}" >> ${PROFILE}
     fi
-EOF
 }
 
 # ----------------------------------------------------------------------
