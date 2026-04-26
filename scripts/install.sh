@@ -21,6 +21,7 @@ add_jupyter_user() {
         echo 'export PATH=${PATH}:~/.local/bin' >> ${PROFILE}
         echo "export http_proxy=${http_proxy}" >> ${PROFILE}
         echo "export https_proxy=${https_proxy}" >> ${PROFILE}
+        chown jupyter:jupyter ${PROFILE}
     fi
 }
 
@@ -55,6 +56,8 @@ mkdir -p /opt/jupyter/wsl-jupyter
 cd /opt/jupyter/wsl-jupyter
 uv init
 uv add jupyter
+uv add sshkernel
+uv run python -m sshkernel install --user
 EOF
     return 0
 }
